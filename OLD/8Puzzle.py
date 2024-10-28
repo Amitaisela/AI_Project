@@ -1,12 +1,12 @@
 import heapq
 
+
 class PuzzleState:
     def __init__(self, board, g_cost=0, parent=None):
         assert len(board) == 9, "Board must have exactly 9 elements."
         self.board = board
         self.g_cost = g_cost  # Cost from the start node
         self.parent = parent  # Pointer to parent state for path reconstruction
-
 
     def __repr__(self):
         return "\n".join([
@@ -15,14 +15,11 @@ class PuzzleState:
             f"{self.board[6:9]}"
         ])
 
-
     def __lt__(self, other):
         return (self.g_cost + self.manhattan_distance()) < (other.g_cost + other.manhattan_distance())
 
-
     def get_empty_index(self):
         return self.board.index(0)
-
 
     def get_neighbors(self):
         neighbors = []
@@ -40,24 +37,27 @@ class PuzzleState:
                 neighbors.append(PuzzleState(new_board, self.g_cost + 1, self))
         return neighbors
 
-
     def manhattan_distance(self):
         distance = 0
         for i, tile in enumerate(self.board):
             if tile != 0:  # Don't calculate for the empty tile
                 target_x, target_y = divmod(GOAL_STATE.index(tile), 3)
                 current_x, current_y = divmod(i, 3)
-                distance += abs(target_x - current_x) + abs(target_y - current_y)
+                distance += abs(target_x - current_x) + \
+                    abs(target_y - current_y)
         return distance
 
     def is_goal(self):
         return self.board == GOAL_STATE
 
 # A* algorithm
+
+
 def a_star(start_state):
     open_list = []
     closed_set = set()
-    heapq.heappush(open_list, (start_state.g_cost + start_state.manhattan_distance(), start_state))
+    heapq.heappush(open_list, (start_state.g_cost +
+                   start_state.manhattan_distance(), start_state))
 
     while open_list:
         _, current = heapq.heappop(open_list)
@@ -77,6 +77,8 @@ def a_star(start_state):
     return None
 
 # RTA* algorithm
+
+
 def rta_star(start_state, max_iterations=100):
     current_state = start_state
     path = []
@@ -84,7 +86,7 @@ def rta_star(start_state, max_iterations=100):
     for _ in range(max_iterations):
         if current_state.is_goal():
             return path
-        
+
         # Get all neighbors and sort by heuristic cost (Manhattan distance)
         neighbors = current_state.get_neighbors()
         neighbors.sort(key=lambda s: s.manhattan_distance())
@@ -94,7 +96,7 @@ def rta_star(start_state, max_iterations=100):
 
         # Add the best move to the path
         path.append(best_neighbor)
-        
+
         # Move to the best neighbor
         current_state = best_neighbor
 
@@ -115,21 +117,22 @@ def solution(start_state, algorithm):
         path = rta_star(start_state)
     else:
         path = a_star(start_state)
-    
+
     if path:
         for step in path:
             print(step)
             print("------")
-        print(f"Solution found in {len(path) - 1} steps")   
+        print(f"Solution found in {len(path) - 1} steps")
     else:
         print("No solution found.")
 
+
 # Example usage
 if __name__ == "__main__":
-    # initial_board = [1, 2, 3, 4, 5, 6, 7, 0, 8]
-    # GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
-    initial_board = [5, 6, 7, 4, 0, 8, 3, 2, 1]
-    GOAL_STATE = [1, 2, 3, 8, 0, 4, 7, 6, 5]
+    initial_board = [1, 2, 3, 4, 5, 6, 7, 0, 8]
+    GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+    # initial_board = [5, 6, 7, 4, 0, 8, 3, 2, 1]
+    # GOAL_STATE = [1, 2, 3, 8, 0, 4, 7, 6, 5]
     start_state = PuzzleState(initial_board)
 
     print("Initial State:")
@@ -137,9 +140,7 @@ if __name__ == "__main__":
 
     algorithm = input("Choose an algorithm (A* / RTA*): ").strip().lower()
 
-    if algorithm == "a*":
+    if algorithm == "a*" or algorithm == "rta*":
         solution(start_state, algorithm)
-    elif algorithm == "rta*":
-        solution(start_state)   
     else:
         print("Invalid algorithm choice. Please choose either 'A*' or 'RTA*'.")
