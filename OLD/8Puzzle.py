@@ -7,6 +7,7 @@ class PuzzleState:
         self.g_cost = g_cost  # Cost from the start node
         self.parent = parent  # Pointer to parent state for path reconstruction
 
+
     def __repr__(self):
         return "\n".join([
             f"{self.board[0:3]}",
@@ -14,11 +15,14 @@ class PuzzleState:
             f"{self.board[6:9]}"
         ])
 
+
     def __lt__(self, other):
         return (self.g_cost + self.manhattan_distance()) < (other.g_cost + other.manhattan_distance())
 
+
     def get_empty_index(self):
         return self.board.index(0)
+
 
     def get_neighbors(self):
         neighbors = []
@@ -36,6 +40,7 @@ class PuzzleState:
                 neighbors.append(PuzzleState(new_board, self.g_cost + 1, self))
         return neighbors
 
+
     def manhattan_distance(self):
         distance = 0
         for i, tile in enumerate(self.board):
@@ -48,6 +53,7 @@ class PuzzleState:
     def is_goal(self):
         return self.board == GOAL_STATE
 
+# A* algorithm
 def a_star(start_state):
     open_list = []
     closed_set = set()
@@ -70,13 +76,7 @@ def a_star(start_state):
 
     return None
 
-def reconstruct_path(state):
-    path = []
-    while state:
-        path.append(state)
-        state = state.parent
-    return path[::-1]
-
+# RTA* algorithm
 def rta_star(start_state, max_iterations=100):
     current_state = start_state
     path = []
@@ -99,9 +99,23 @@ def rta_star(start_state, max_iterations=100):
         current_state = best_neighbor
 
     return None  # No solution found within the iteration limit
-def solution(start_state):
+
+
+def reconstruct_path(state):
+    path = []
+    while state:
+        path.append(state)
+        state = state.parent
+    return path[::-1]
+
+
+def solution(start_state, algorithm):
     print("\nA* Solution Path:")
-    path = a_star(start_state)
+    if algorithm == "rta*":
+        path = rta_star(start_state)
+    else:
+        path = a_star(start_state)
+    
     if path:
         for step in path:
             print(step)
@@ -124,7 +138,7 @@ if __name__ == "__main__":
     algorithm = input("Choose an algorithm (A* / RTA*): ").strip().lower()
 
     if algorithm == "a*":
-        solution(start_state)
+        solution(start_state, algorithm)
     elif algorithm == "rta*":
         solution(start_state)   
     else:
