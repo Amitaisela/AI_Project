@@ -1,0 +1,15 @@
+VITAL:
+    WE need to code the huristic H* - the true distance between any solvable 8-puzzle and the solution 
+        it can be done, the paper mentioned "retrograde analysis" - need to look into that 
+
+    make an 8-puzzle problem into a full, orginized class etc...
+
+    convert RTA* into our problem, not the maze problem
+
+TODO:
+    finish other huristic
+    convert A8 into our problem 
+
+
+Done:
+    Generate all ~188,000 possible 8-puzzle combination as arr's
