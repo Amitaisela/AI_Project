@@ -18,14 +18,17 @@ def is_solvable(state):
 
 
 def generate_solvable_8_puzzles():
-    target_state = (1, 2, 3, 4, 5, 6, 7, 8, 0)
-    all_states = set()
+    target_state = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+    all_states = []
     for perm in permutations(target_state):
         if is_solvable(perm):
-            all_states.add(perm)
+            all_states.append(list(perm))
+
     return all_states
 
 
-# Get all solvable 8-puzzles
-solvable_puzzles = generate_solvable_8_puzzles()
-print(f"Total solvable 8-puzzle configurations: {len(solvable_puzzles)}")
+# solvable_puzzles = generate_solvable_8_puzzles()
+# for i in range(1):
+#     print(solvable_puzzles[i])
+
+# print(len(solvable_puzzles))
