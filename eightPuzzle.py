@@ -1,7 +1,11 @@
 import time
-from generate import generate_solvable_8_puzzles
 import random
+from queue import PriorityQueue
+
 from Heuristic import Heuristic
+from generate import generate_solvable_8_puzzles
+
+
 COL = 3
 
 
@@ -11,6 +15,7 @@ class Node:
         self.parent = None
         self.puzzle = p[:]
         self.x = 0
+        self.g = self.h = float('inf')
 
     def printPuzzle(self):
         print()
@@ -69,17 +74,6 @@ class Node:
         self.movedown()
         self.movetoleft()
         self.moveup()
-
-    def isunsolvable(self):
-        count = 0
-        for i in range(8):
-            for j in range(i, 9):
-                if self.puzzle[i] > self.puzzle[j] and self.puzzle[j] != 0:
-                    count += 1
-        if count % 2 == 1:
-            return True
-        else:
-            return False
 
 
 class search:

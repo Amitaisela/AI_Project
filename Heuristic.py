@@ -21,3 +21,15 @@ class Heuristic:
         # not final, a placeholder for now
         noise = np.random.normal(mu, sigma)
         return c * (huristic(node, goal) + noise)
+
+    @staticmethod
+    def Linear_Conflict(node, goal):
+        pass
+
+    @staticmethod
+    def Misplaced_Tiles(node, goal):
+        pass
+
+    @staticmethod
+    def Relaxed_Adjancey(node, goal):
+        pass
