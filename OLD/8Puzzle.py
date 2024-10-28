@@ -1,62 +1,3 @@
-# class PuzzleState:
-#     def __init__(self, board):
-#         # Ensure the board is a list of 9 elements
-#         assert len(board) == 9, "Board must have exactly 9 elements."
-#         self.board = board
-
-#     def __repr__(self):
-#         # Display the board in a 3x3 format
-#         return "\n".join([
-#             f"{self.board[0:3]}",
-#             f"{self.board[3:6]}",
-#             f"{self.board[6:9]}"
-#         ])
-
-#     # Helper to find the index of the empty tile
-#     def get_empty_index(self):
-#         return self.board.index(0)
-
-#     # Function to generate new states based on possible moves
-#     def get_neighbors(self):
-#         neighbors = []
-#         empty_index = self.get_empty_index()
-        
-#         # Possible moves based on empty_index
-#         moves = {
-#             'up': empty_index - 3,
-#             'down': empty_index + 3,
-#             'left': empty_index - 1 if empty_index % 3 != 0 else -1,
-#             'right': empty_index + 1 if (empty_index + 1) % 3 != 0 else -1
-#         }
-        
-#         # Execute valid moves
-#         for direction, new_index in moves.items():
-#             if 0 <= new_index < 9:
-#                 new_board = self.board[:]
-#                 new_board[empty_index], new_board[new_index] = new_board[new_index], new_board[empty_index]
-#                 neighbors.append(PuzzleState(new_board))
-        
-#         return neighbors
-
-
-# # Define the goal state for the puzzle
-# GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
-
-# # Example usage
-# if __name__ == "__main__":
-#     # Example initial state
-#     initial_board = [1, 2, 3, 4, 5, 6, 7, 0, 8]
-#     initial_state = PuzzleState(initial_board)
-
-#     print("Initial State:")
-#     print(initial_state)
-#     print("\nNeighbors:")
-#     for neighbor in initial_state.get_neighbors():
-#         print(neighbor)
-#         print("------")
-
-
-
 import heapq
 
 class PuzzleState:
@@ -74,7 +15,6 @@ class PuzzleState:
         ])
 
     def __lt__(self, other):
-        # Required for priority queue ordering by f(n) = g(n) + h(n)
         return (self.g_cost + self.manhattan_distance()) < (other.g_cost + other.manhattan_distance())
 
     def get_empty_index(self):
@@ -97,7 +37,6 @@ class PuzzleState:
         return neighbors
 
     def manhattan_distance(self):
-        # Calculates the Manhattan Distance heuristic
         distance = 0
         for i, tile in enumerate(self.board):
             if tile != 0:  # Don't calculate for the empty tile
@@ -108,8 +47,6 @@ class PuzzleState:
 
     def is_goal(self):
         return self.board == GOAL_STATE
-
-GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
 def a_star(start_state):
     open_list = []
@@ -140,19 +77,55 @@ def reconstruct_path(state):
         state = state.parent
     return path[::-1]
 
+def rta_star(start_state, max_iterations=100):
+    current_state = start_state
+    path = []
+
+    for _ in range(max_iterations):
+        if current_state.is_goal():
+            return path
+        
+        # Get all neighbors and sort by heuristic cost (Manhattan distance)
+        neighbors = current_state.get_neighbors()
+        neighbors.sort(key=lambda s: s.manhattan_distance())
+
+        # Select the best neighbor
+        best_neighbor = neighbors[0]
+
+        # Add the best move to the path
+        path.append(best_neighbor)
+        
+        # Move to the best neighbor
+        current_state = best_neighbor
+
+    return None  # No solution found within the iteration limit
+def solution(start_state):
+    print("\nA* Solution Path:")
+    path = a_star(start_state)
+    if path:
+        for step in path:
+            print(step)
+            print("------")
+        print(f"Solution found in {len(path) - 1} steps")   
+    else:
+        print("No solution found.")
+
 # Example usage
 if __name__ == "__main__":
-    initial_board = [8, 7, 4, 1, 2, 0, 3, 5, 6]
+    # initial_board = [1, 2, 3, 4, 5, 6, 7, 0, 8]
+    # GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
+    initial_board = [5, 6, 7, 4, 0, 8, 3, 2, 1]
+    GOAL_STATE = [1, 2, 3, 8, 0, 4, 7, 6, 5]
     start_state = PuzzleState(initial_board)
 
     print("Initial State:")
     print(start_state)
 
-    path = a_star(start_state)
-    if path:
-        print("\nSolution Path:")
-        for step in path:
-            print(step)
-            print("------")
+    algorithm = input("Choose an algorithm (A* / RTA*): ").strip().lower()
+
+    if algorithm == "a*":
+        solution(start_state)
+    elif algorithm == "rta*":
+        solution(start_state)   
     else:
-        print("No solution found.")
+        print("Invalid algorithm choice. Please choose either 'A*' or 'RTA*'.")
