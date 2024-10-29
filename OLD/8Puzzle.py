@@ -40,6 +40,9 @@ class PuzzleState:
                     new_board, self.g_cost + 1, self, self.heuristic))
         return neighbors
 
+    def hstart(self):
+        pass
+
     def manhattan_distance(self):
         distance = 0
         for i, tile in enumerate(self.board):
@@ -50,9 +53,31 @@ class PuzzleState:
                     abs(target_y - current_y)
         return distance
 
+    def linear_conflict(self):
+        pass
+
+    def misplaced_tiles(self):
+        pass
+
+    def relaxed_adjancey(self):
+        pass
+
     def calculate_heuristic(self):
-        if self.heuristic == "manhattan_distance":
+        if self.heuristic == "hstart":
+            return self.hstart()
+
+        elif self.heuristic == "manhattan_distance":
             return self.manhattan_distance()
+
+        elif self.heuristic == "linear_conflict":
+            return self.linear_conflict()
+
+        elif self.heuristic == "misplaced_tiles":
+            return self.misplaced_tiles()
+
+        elif self.heuristic == "relaxed_adjancey":
+            return self.relaxed_adjancey()
+
         else:
             raise ValueError(f"Invalid heuristic specified: {self.heuristic}")
 
