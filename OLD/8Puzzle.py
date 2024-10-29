@@ -3,11 +3,12 @@ import generatePuzzles
 
 
 class PuzzleState:
-    def __init__(self, board, g_cost=0, parent=None):
+    def __init__(self, board, g_cost=0, parent=None, heuristic="manhattan_distance"):
         assert len(board) == 9, "Board must have exactly 9 elements."
         self.board = board
         self.g_cost = g_cost  # Cost from the start node
         self.parent = parent  # Pointer to parent state for path reconstruction
+        self.heuristic = heuristic  # Heuristic name as a string
 
     def __repr__(self):
         return "\n".join([
@@ -17,7 +18,7 @@ class PuzzleState:
         ])
 
     def __lt__(self, other):
-        return (self.g_cost + self.manhattan_distance()) < (other.g_cost + other.manhattan_distance())
+        return (self.g_cost + self.calculate_heuristic()) < (other.g_cost + other.calculate_heuristic())
 
     def get_empty_index(self):
         return self.board.index(0)
@@ -35,7 +36,8 @@ class PuzzleState:
             if 0 <= new_index < 9:
                 new_board = self.board[:]
                 new_board[empty_index], new_board[new_index] = new_board[new_index], new_board[empty_index]
-                neighbors.append(PuzzleState(new_board, self.g_cost + 1, self))
+                neighbors.append(PuzzleState(
+                    new_board, self.g_cost + 1, self, self.heuristic))
         return neighbors
 
     def manhattan_distance(self):
@@ -48,6 +50,12 @@ class PuzzleState:
                     abs(target_y - current_y)
         return distance
 
+    def calculate_heuristic(self):
+        if self.heuristic == "manhattan_distance":
+            return self.manhattan_distance()
+        else:
+            raise ValueError(f"Invalid heuristic specified: {self.heuristic}")
+
     def is_goal(self):
         return self.board == GOAL_STATE
 
@@ -58,7 +66,7 @@ def a_star(start_state):
     open_list = []
     closed_set = set()
     heapq.heappush(open_list, (start_state.g_cost +
-                   start_state.manhattan_distance(), start_state))
+                   start_state.calculate_heuristic(), start_state))
 
     while open_list:
         _, current = heapq.heappop(open_list)
@@ -72,7 +80,7 @@ def a_star(start_state):
             if tuple(neighbor.board) in closed_set:
                 continue
 
-            f_cost = neighbor.g_cost + neighbor.manhattan_distance()
+            f_cost = neighbor.g_cost + neighbor.calculate_heuristic()
             heapq.heappush(open_list, (f_cost, neighbor))
 
     return None
@@ -88,9 +96,9 @@ def rta_star(start_state, max_iterations=100):
         if current_state.is_goal():
             return path
 
-        # Get all neighbors and sort by heuristic cost (Manhattan distance)
+        # Get all neighbors and sort by heuristic cost
         neighbors = current_state.get_neighbors()
-        neighbors.sort(key=lambda s: s.manhattan_distance())
+        neighbors.sort(key=lambda s: s.calculate_heuristic())
 
         # Select the best neighbor
         best_neighbor = neighbors[0]
@@ -113,7 +121,7 @@ def reconstruct_path(state):
 
 
 def solution(start_state, algorithm):
-    print("\nA* Solution Path:")
+    print("\nSolution Path:")
     if algorithm == "rta*":
         path = rta_star(start_state)
     else:
@@ -129,15 +137,25 @@ def solution(start_state, algorithm):
 
 
 if __name__ == "__main__":
-    # All_puzzles = generatePuzzles.generate_puzzles()
+    # All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
     All_puzzles = [[8, 7, 4, 1, 2, 0, 3, 5, 6]]
-    GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
     algorithms = ["a*"]
+    heuristics = ["manhattan_distance"]
+
+    GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
     for puzzle in All_puzzles:
         for algorithm in algorithms:
-            start_state = PuzzleState(puzzle)
-            solution(start_state, algorithm)
+            for heuristic in heuristics:
 
+                try:
+                    print(f"\nUsing heuristic: {heuristic}")
+                    start_state = PuzzleState(puzzle, heuristic=heuristic)
+                    solution(start_state, algorithm)
 
-# algorithm = input("Choose an algorithm (A* / RTA*): ").strip().lower()
+                except ValueError as e:
+                    print(e)
+                    with open("error_log.txt", "a") as f:
+                        f.write(f"Error: {e}\n")
+
+                    continue
