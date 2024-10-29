@@ -1,4 +1,5 @@
 import heapq
+import generatePuzzles
 
 
 class PuzzleState:
@@ -127,20 +128,16 @@ def solution(start_state, algorithm):
         print("No solution found.")
 
 
-# Example usage
 if __name__ == "__main__":
-    initial_board = [1, 2, 3, 4, 5, 6, 7, 0, 8]
+    # All_puzzles = generatePuzzles.generate_puzzles()
+    All_puzzles = [[8, 7, 4, 1, 2, 0, 3, 5, 6]]
     GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
-    # initial_board = [5, 6, 7, 4, 0, 8, 3, 2, 1]
-    # GOAL_STATE = [1, 2, 3, 8, 0, 4, 7, 6, 5]
-    start_state = PuzzleState(initial_board)
+    algorithms = ["a*"]
 
-    print("Initial State:")
-    print(start_state)
+    for puzzle in All_puzzles:
+        for algorithm in algorithms:
+            start_state = PuzzleState(puzzle)
+            solution(start_state, algorithm)
 
-    algorithm = input("Choose an algorithm (A* / RTA*): ").strip().lower()
 
-    if algorithm == "a*" or algorithm == "rta*":
-        solution(start_state, algorithm)
-    else:
-        print("Invalid algorithm choice. Please choose either 'A*' or 'RTA*'.")
+# algorithm = input("Choose an algorithm (A* / RTA*): ").strip().lower()
