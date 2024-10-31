@@ -1,4 +1,9 @@
 import heapq
+from collections import deque
+import generatePuzzles
+
+
+import heapq
 import generatePuzzles
 
 
@@ -40,49 +45,62 @@ class PuzzleState:
                     new_board, self.g_cost + 1, self, self.heuristic))
         return neighbors
 
-    def hstart(self):
-        pass
+    def hstar(self):
+        return float('inf')
 
     def manhattan_distance(self):
         distance = 0
-        for i, tile in enumerate(self.board):
-            if tile != 0:  # Don't calculate for the empty tile
-                target_x, target_y = divmod(GOAL_STATE.index(tile), 3)
-                current_x, current_y = divmod(i, 3)
-                distance += abs(target_x - current_x) + \
-                    abs(target_y - current_y)
+        # for i, tile in enumerate(self.board):
+        #     if tile != 0:  # Don't calculate for the empty tile
+        #         target_x, target_y = divmod(GOAL_STATE.index(tile), 3)
+        #         current_x, current_y = divmod(i, 3)
+        #         distance += abs(target_x - current_x) + \
+        #             abs(target_y - current_y)
         return distance
 
     def linear_conflict(self):
         pass
 
     def misplaced_tiles(self):
-        pass
+        return sum(1 for i, tile in enumerate(self.board) if tile != 0 and tile != GOAL_STATE[i])
 
     def Gaschnig_relaxed_adjancey(self):
-        pass
+        board_copy = self.board[:]
+        moves = 0
+        while board_copy != GOAL_STATE:
+            empty_index = board_copy.index(0)
+            if board_copy[empty_index] != GOAL_STATE[empty_index]:
+                # Find the target tile to swap with the empty tile
+                target_tile = GOAL_STATE[empty_index]
+                target_index = board_copy.index(target_tile)
+                # Swap
+                board_copy[empty_index], board_copy[target_index] = board_copy[target_index], board_copy[empty_index]
+            else:
+                # Swap the empty tile with any misplaced tile
+                for i, tile in enumerate(board_copy):
+                    if tile != 0 and tile != GOAL_STATE[i]:
+                        board_copy[empty_index], board_copy[i] = board_copy[i], board_copy[empty_index]
+                        break
+            moves += 1
+        return moves
 
     def calculate_heuristic(self):
-        if self.heuristic == "hstart":
-            return self.hstart()
-
+        if self.heuristic == "hstar":
+            return self.hstar()
         elif self.heuristic == "manhattan_distance":
             return self.manhattan_distance()
-
         elif self.heuristic == "linear_conflict":
             return self.linear_conflict()
-
         elif self.heuristic == "misplaced_tiles":
             return self.misplaced_tiles()
-
         elif self.heuristic == "Gaschnig_relaxed_adjancey":
             return self.Gaschnig_relaxed_adjancey()
-
         else:
             raise ValueError(f"Invalid heuristic specified: {self.heuristic}")
 
     def is_goal(self):
         return self.board == GOAL_STATE
+
 
 # A* algorithm
 
@@ -163,24 +181,35 @@ def solution(start_state, algorithm):
 
 if __name__ == "__main__":
     # All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
-    All_puzzles = [[8, 7, 4, 1, 2, 0, 3, 5, 6]]
+    All_puzzles = [[0, 2, 1, 7, 4, 5, 6, 3, 8],
+                   [0, 2, 1, 5, 4, 3, 6, 7, 8],
+                   [4, 3, 6, 8, 0, 7, 5, 2, 1],
+                   [2, 7, 0, 5, 4, 3, 8, 1, 6]]
     algorithms = ["a*"]
-    heuristics = ["manhattan_distance"]
+    heuristics = [
+        # "hstar",
+        # "manhattan_distance",
+        # "linear_conflict",
+        "misplaced_tiles",
+        "Gaschnig_relaxed_adjancey"
+    ]
 
     GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
     for puzzle in All_puzzles:
+        print(puzzle)
         for algorithm in algorithms:
             for heuristic in heuristics:
-
                 try:
-                    print(f"\nUsing heuristic: {heuristic}")
                     start_state = PuzzleState(puzzle, heuristic=heuristic)
-                    solution(start_state, algorithm)
+                    first_huristic = start_state.calculate_heuristic()
+                    print(f"heuristic {heuristic}: {first_huristic}")
+                    # solution(start_state, algorithm)
 
                 except ValueError as e:
                     print(e)
-                    with open("error_log.txt", "a") as f:
-                        f.write(f"Error: {e}\n")
+                    # with open("error_log.txt", "a") as f:
+                    #     f.write(f"Error: {e}\n")
 
                     continue
+        print()

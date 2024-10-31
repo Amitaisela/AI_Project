@@ -1,0 +1,22 @@
+Github:
+    possible RTA, LRTA, A*
+        https://github.com/hifarhanali/Path-Finding-Visualizer-AI
+            the RTA*, A*, and LRTA* are in Path_Finding.py
+
+Huristic explanations:
+    hstart - actual distance, meaning how many moves to get to the solution. We can use BFS in order to calculate this 
+    manhattan_distance - sum of the manhattan distances of tiles that are not in there correct place.
+    linear_conflict - two tiles are in linear conflict if: 
+        1) they are in the same line ( row or column )
+        2) there goal positions are in the same line
+        3) tile 1 is on the right of tile 2
+        4) the goal position of tile 1 is on the left of tile 2
+        The actual huristic value is calculated as follows:
+            in each row, calculate the number of tiles with linear conflict, minus 1.
+            same for column
+            add all, multiply by 2 and add the manhattan distance. this is the huristic value.
+        
+        Note that this huristic has a paper on it.
+    misplaced_tiles - number of the misplaced tiles, basically the tiles that are not in their goal positions are counted.
+    Gaschnig_relaxed_adjancey - the number of tiles that needs to be moved to reach the goal state if it were possible to swap any tile with the empty tile.
+
