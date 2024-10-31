@@ -45,18 +45,9 @@ class PuzzleState:
                     new_board, self.g_cost + 1, self, self.heuristic))
         return neighbors
 
-    def hstar(self):
-        return float('inf')
-
     def manhattan_distance(self):
-        distance = 0
-        # for i, tile in enumerate(self.board):
-        #     if tile != 0:  # Don't calculate for the empty tile
-        #         target_x, target_y = divmod(GOAL_STATE.index(tile), 3)
-        #         current_x, current_y = divmod(i, 3)
-        #         distance += abs(target_x - current_x) + \
-        #             abs(target_y - current_y)
-        return distance
+        # sum of the manhattan distances of tiles that are not in there correct place.
+        return sum(abs(i % 3 - tile % 3) + abs(i // 3 - tile // 3) for i, tile in enumerate(self.board) if tile != 0)
 
     def linear_conflict(self):
         pass
@@ -185,13 +176,14 @@ if __name__ == "__main__":
                    [0, 2, 1, 5, 4, 3, 6, 7, 8],
                    [4, 3, 6, 8, 0, 7, 5, 2, 1],
                    [2, 7, 0, 5, 4, 3, 8, 1, 6]]
+
+    All_puzzles = [[0, 2, 1, 5, 4, 3, 6, 7, 8]]
     algorithms = ["a*"]
     heuristics = [
-        # "hstar",
-        # "manhattan_distance",
-        # "linear_conflict",
-        "misplaced_tiles",
-        "Gaschnig_relaxed_adjancey"
+        "manhattan_distance",
+        "linear_conflict",
+        # "misplaced_tiles",
+        # "Gaschnig_relaxed_adjancey"
     ]
 
     GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
