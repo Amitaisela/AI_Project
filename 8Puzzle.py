@@ -265,13 +265,7 @@ if __name__ == "__main__":
                 try:
                     start_state = PuzzleState(
                         puzzle, distances, heuristic=heuristic)
-                    for i in range(10):
-                        print(start_state.optimistic_heuristic())
-                        print(start_state.pessimistic_heuristic())
-                        print(start_state.calculate_heuristic())
-
-                    exit()
-                    # solution(start_state, algorithm)
+                    solution(start_state, algorithm)
 
                 except ValueError as e:
                     print(e)
