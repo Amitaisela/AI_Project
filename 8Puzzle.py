@@ -2,19 +2,22 @@ import heapq
 from collections import deque
 from distanceGenerator import *
 import os
+import numpy as np
 import generatePuzzles
 
 GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
 
 class PuzzleState:
-    def __init__(self, board, distances, g_cost=0, parent=None, heuristic="manhattan_distance", ):
+    def __init__(self, board, distances, g_cost=0, parent=None, heuristic="manhattan_distance", sigma=2.5, c=2/3):
         assert len(board) == 9, "Board must have exactly 9 elements."
         self.board = board
         self.g_cost = g_cost  # Cost from the start node
         self.parent = parent  # Pointer to parent state for path reconstruction
         self.heuristic = heuristic  # Heuristic name as a string
         self.distances = distances
+        self.sigma = sigma
+        self.c = c
 
     def __repr__(self):
         return "\n".join([
@@ -125,6 +128,16 @@ class PuzzleState:
             moves += 1
         return moves
 
+    def optimistic_heuristic(self):
+        heuristic_value = self.calculate_heuristic()
+        noise = np.random.normal(heuristic_value, self.sigma)
+        return self.c*(heuristic_value + noise)
+
+    def pessimistic_heuristic(self):
+        heuristic_value = self.calculate_heuristic()
+        noise = np.random.normal(heuristic_value, self.sigma)
+        return (1/self.c)*(heuristic_value + noise)
+
     def calculate_heuristic(self):
         if self.heuristic == "hstar":
             return self.hstar()
@@ -229,10 +242,12 @@ if __name__ == "__main__":
     else:
         distances = load_distances()
 
-    All_puzzles = [[0, 2, 1, 7, 4, 5, 6, 3, 8],
+    All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8],
                    [0, 2, 1, 5, 4, 3, 6, 7, 8],
                    [4, 3, 6, 8, 0, 7, 5, 2, 1],
                    [2, 7, 0, 5, 4, 3, 8, 1, 6]]
+
+    All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
     algorithms = ["a*"]
     heuristics = [
@@ -242,15 +257,21 @@ if __name__ == "__main__":
         "misplaced_tiles",
         "Gaschnig_relaxed_adjancey"
     ]
-
-    for puzzle in All_puzzles:
-        print(puzzle)
+    for heuristic in heuristics:
         for algorithm in algorithms:
-            for heuristic in heuristics:
+            print(f"Algorithm: {algorithm} | Heuristic: {heuristic}")
+            for puzzle in All_puzzles:
+                print(f"Puzzle: {puzzle}")
                 try:
                     start_state = PuzzleState(
                         puzzle, distances, heuristic=heuristic)
-                    solution(start_state, algorithm)
+                    for i in range(10):
+                        print(start_state.optimistic_heuristic())
+                        print(start_state.pessimistic_heuristic())
+                        print(start_state.calculate_heuristic())
+
+                    exit()
+                    # solution(start_state, algorithm)
 
                 except ValueError as e:
                     print(e)

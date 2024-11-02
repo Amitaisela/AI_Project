@@ -1,6 +1,5 @@
 TODO:
     convert RTA* into our problem, not the maze problem
-    Add optimistic and pessimistic 
     add diag
 
 need proofing:
@@ -11,3 +10,4 @@ Done:
     Generate all ~188,000 possible 8-puzzle combination as arr's
     make an 8-puzzle problem into a full, orginized class etc...
     finish other huristic
+    Add optimistic and pessimistic 
