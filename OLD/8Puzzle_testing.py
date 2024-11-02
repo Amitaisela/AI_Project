@@ -2,9 +2,7 @@ import heapq
 from collections import deque
 import generatePuzzles
 
-
-import heapq
-import generatePuzzles
+GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
 
 class PuzzleState:
@@ -50,7 +48,46 @@ class PuzzleState:
         return sum(abs(i % 3 - tile % 3) + abs(i // 3 - tile // 3) for i, tile in enumerate(self.board) if tile != 0)
 
     def linear_conflict(self):
-        pass
+        rows = [self.board[i:i+3] for i in range(0, 9, 3)]
+        columns = [self.board[i::3] for i in range(3)]
+        manhattan_distance = self.manhattan_distance()
+        counter = []
+
+        for i, rows in enumerate(rows):
+            # get all pairs of tiles in the same row
+            pairs = [(a, b) for a in rows for b in rows if a !=
+                     0 and b != 0 and a != b]
+            for pair in pairs:
+                t_j, t_k = pair
+
+                # check if t_j is on the right of t_k
+                if rows.index(t_j) > rows.index(t_k):
+                    arr = [i*3+1, i*3+2, i*3+3]
+
+                    # check if t_j, t_k in the right row
+                    if t_j in arr and t_k in arr:
+
+                        if t_j < t_k:
+                            counter.append((t_j, t_k))
+                            # remove reverse pair to avoid double counting, if still in the list
+                            if (t_k, t_j) in pairs:
+                                pairs.remove((t_k, t_j))
+
+        # same for columns
+        for i, column in enumerate(columns):
+            pairs = [(a, b) for a in column for b in column if a !=
+                     0 and b != 0 and a != b]
+            for pair in pairs:
+                t_j, t_k = pair
+                if column.index(t_j) > column.index(t_k):
+                    arr = [i+1, i+4, i+7]
+                    if t_j in arr and t_k in arr:
+                        if t_j < t_k:
+                            counter.append((t_j, t_k))
+                            if (t_k, t_j) in pairs:
+                                pairs.remove((t_k, t_j))
+
+        return manhattan_distance + 2 * len(counter)
 
     def misplaced_tiles(self):
         return sum(1 for i, tile in enumerate(self.board) if tile != 0 and tile != GOAL_STATE[i])
@@ -182,11 +219,9 @@ if __name__ == "__main__":
     heuristics = [
         "manhattan_distance",
         "linear_conflict",
-        # "misplaced_tiles",
-        # "Gaschnig_relaxed_adjancey"
+        "misplaced_tiles",
+        "Gaschnig_relaxed_adjancey"
     ]
-
-    GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
     for puzzle in All_puzzles:
         print(puzzle)
