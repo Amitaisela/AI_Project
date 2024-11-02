@@ -1,17 +1,20 @@
 import heapq
 from collections import deque
+from distanceGenerator import *
+import os
 import generatePuzzles
 
 GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
 
 class PuzzleState:
-    def __init__(self, board, g_cost=0, parent=None, heuristic="manhattan_distance"):
+    def __init__(self, board, distances, g_cost=0, parent=None, heuristic="manhattan_distance", ):
         assert len(board) == 9, "Board must have exactly 9 elements."
         self.board = board
         self.g_cost = g_cost  # Cost from the start node
         self.parent = parent  # Pointer to parent state for path reconstruction
         self.heuristic = heuristic  # Heuristic name as a string
+        self.distances = distances
 
     def __repr__(self):
         return "\n".join([
@@ -40,8 +43,18 @@ class PuzzleState:
                 new_board = self.board[:]
                 new_board[empty_index], new_board[new_index] = new_board[new_index], new_board[empty_index]
                 neighbors.append(PuzzleState(
-                    new_board, self.g_cost + 1, self, self.heuristic))
+                    new_board, self.distances, self.g_cost + 1, self, self.heuristic))
         return neighbors
+
+    def hstar(self):
+        puzzle_tuple = tuple(self.board)
+
+        if puzzle_tuple in self.distances:
+            distance_to_goal = self.distances[puzzle_tuple]
+            return distance_to_goal
+        else:
+            raise ValueError(
+                "This puzzle configuration is not in the precomputed distances.")
 
     def manhattan_distance(self):
         # sum of the manhattan distances of tiles that are not in there correct place.
@@ -192,16 +205,16 @@ def reconstruct_path(state):
 
 
 def solution(start_state, algorithm):
-    print("\nSolution Path:")
+    print("Solution Path:")
     if algorithm == "rta*":
         path = rta_star(start_state)
     else:
         path = a_star(start_state)
 
     if path:
-        for step in path:
-            print(step)
-            print("------")
+        # for step in path:
+        #     print(step)
+        #     print("------")
         print(f"Solution found in {len(path) - 1} steps")
     else:
         print("No solution found.")
@@ -209,14 +222,21 @@ def solution(start_state, algorithm):
 
 if __name__ == "__main__":
     # All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
+
+    if not os.path.exists("distances.json"):
+        distances = bfs_shortest_distances(tuple(GOAL_STATE))
+        save_distances(distances)
+    else:
+        distances = load_distances()
+
     All_puzzles = [[0, 2, 1, 7, 4, 5, 6, 3, 8],
                    [0, 2, 1, 5, 4, 3, 6, 7, 8],
                    [4, 3, 6, 8, 0, 7, 5, 2, 1],
                    [2, 7, 0, 5, 4, 3, 8, 1, 6]]
 
-    All_puzzles = [[0, 2, 1, 5, 4, 3, 6, 7, 8]]
     algorithms = ["a*"]
     heuristics = [
+        "hstar",
         "manhattan_distance",
         "linear_conflict",
         "misplaced_tiles",
@@ -228,10 +248,9 @@ if __name__ == "__main__":
         for algorithm in algorithms:
             for heuristic in heuristics:
                 try:
-                    start_state = PuzzleState(puzzle, heuristic=heuristic)
-                    first_huristic = start_state.calculate_heuristic()
-                    print(f"heuristic {heuristic}: {first_huristic}")
-                    # solution(start_state, algorithm)
+                    start_state = PuzzleState(
+                        puzzle, distances, heuristic=heuristic)
+                    solution(start_state, algorithm)
 
                 except ValueError as e:
                     print(e)
@@ -239,4 +258,5 @@ if __name__ == "__main__":
                     #     f.write(f"Error: {e}\n")
 
                     continue
-        print()
+                print()
+            print("====================================")
