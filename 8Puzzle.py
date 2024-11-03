@@ -4,6 +4,7 @@ from distanceGenerator import *
 import os
 import numpy as np
 import generatePuzzles
+import time
 
 GOAL_STATE = [1, 2, 3, 4, 5, 6, 7, 8, 0]
 
@@ -161,6 +162,7 @@ class PuzzleState:
 
 def a_star(start_state):
     open_list = []
+    node_count = 0
     closed_set = set()
     heapq.heappush(open_list, (start_state.g_cost +
                    start_state.calculate_heuristic(), start_state))
@@ -169,18 +171,19 @@ def a_star(start_state):
         _, current = heapq.heappop(open_list)
 
         if current.is_goal():
-            return reconstruct_path(current)
+            return reconstruct_path(current, node_count)
 
         closed_set.add(tuple(current.board))
 
         for neighbor in current.get_neighbors():
+            node_count += 1
             if tuple(neighbor.board) in closed_set:
                 continue
 
             f_cost = neighbor.g_cost + neighbor.calculate_heuristic()
             heapq.heappush(open_list, (f_cost, neighbor))
 
-    return None
+    return None, node_count
 
 # RTA* algorithm
 
@@ -188,15 +191,16 @@ def a_star(start_state):
 def rta_star(start_state, max_iterations=100):
     current_state = start_state
     path = []
+    node_count = 0
 
     for _ in range(max_iterations):
         if current_state.is_goal():
-            return path
+            return path, node_count
 
         # Get all neighbors and sort by heuristic cost
         neighbors = current_state.get_neighbors()
         neighbors.sort(key=lambda s: s.calculate_heuristic())
-
+        node_count += len(neighbors)
         # Select the best neighbor
         best_neighbor = neighbors[0]
 
@@ -206,31 +210,37 @@ def rta_star(start_state, max_iterations=100):
         # Move to the best neighbor
         current_state = best_neighbor
 
-    return None  # No solution found within the iteration limit
+    return None, node_count # No solution found within the iteration limit
 
 
-def reconstruct_path(state):
+def reconstruct_path(state, node_count):
     path = []
     while state:
         path.append(state)
         state = state.parent
-    return path[::-1]
+    return path[::-1], node_count
 
 
 def solution(start_state, algorithm):
+    start_time = time.time()
     print("Solution Path:")
     if algorithm == "rta*":
-        path = rta_star(start_state)
+        path, nodes = rta_star(start_state)
     else:
-        path = a_star(start_state)
+        path, nodes = a_star(start_state)
 
     if path:
         # for step in path:
         #     print(step)
         #     print("------")
         print(f"Solution found in {len(path) - 1} steps")
+        print(f"Nodes expanded: {nodes}")
     else:
         print("No solution found.")
+        print(f"Nodes expanded: {nodes}")
+
+    elapsed_time = time.time() - start_time
+    print(f"Time: {elapsed_time:.18f} seconds")
 
 
 if __name__ == "__main__":
@@ -249,7 +259,7 @@ if __name__ == "__main__":
 
     All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
-    algorithms = ["a*"]
+    algorithms = ["A*"]
     heuristics = [
         "hstar",
         "manhattan_distance",
