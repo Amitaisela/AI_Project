@@ -160,12 +160,19 @@ class PuzzleState:
 # A* algorithm
 
 
-def a_star(start_state):
+def a_star(start_state, status):
     open_list = []
     node_count = 0
     closed_set = set()
-    heapq.heappush(open_list, (start_state.g_cost +
+    if status == "Basic":
+        heapq.heappush(open_list, (start_state.g_cost +
                    start_state.calculate_heuristic(), start_state))
+    elif status == "Optimistic":
+        heapq.heappush(open_list, (start_state.g_cost +
+                   start_state.optimistic_heuristic(), start_state))
+    elif status == "Pessimistic":
+        heapq.heappush(open_list, (start_state.g_cost +
+                   start_state.pessimistic_heuristic(), start_state))
 
     while open_list:
         _, current = heapq.heappop(open_list)
@@ -179,8 +186,12 @@ def a_star(start_state):
             node_count += 1
             if tuple(neighbor.board) in closed_set:
                 continue
-
-            f_cost = neighbor.g_cost + neighbor.calculate_heuristic()
+            if status == "Basic":
+                f_cost = neighbor.g_cost + neighbor.calculate_heuristic()
+            elif status == "Optimistic":
+                f_cost = neighbor.g_cost + neighbor.optimistic_heuristic()
+            elif status == "Pessimistic":
+                f_cost = neighbor.g_cost + neighbor.pessimistic_heuristic()
             heapq.heappush(open_list, (f_cost, neighbor))
 
     return None, node_count
@@ -188,7 +199,7 @@ def a_star(start_state):
 # RTA* algorithm
 
 
-def rta_star(start_state, max_iterations=100):
+def rta_star(start_state, status, max_iterations=100):
     current_state = start_state
     path = []
     node_count = 0
@@ -199,7 +210,13 @@ def rta_star(start_state, max_iterations=100):
 
         # Get all neighbors and sort by heuristic cost
         neighbors = current_state.get_neighbors()
-        neighbors.sort(key=lambda s: s.calculate_heuristic())
+        if status == "Basic":
+            neighbors.sort(key=lambda s: s.calculate_heuristic())
+        elif status == "Optimistic":
+            neighbors.sort(key=lambda s: s.optimistic_heuristic())
+        elif status == "Pessimistic":
+            neighbors.sort(key=lambda s: s.pessimistic_heuristic())
+
         node_count += len(neighbors)
         # Select the best neighbor
         best_neighbor = neighbors[0]
@@ -221,18 +238,15 @@ def reconstruct_path(state, node_count):
     return path[::-1], node_count
 
 
-def solution(start_state, algorithm):
+def solution(start_state, algorithm, status):
     start_time = time.time()
     print("Solution Path:")
     if algorithm == "rta*":
-        path, nodes = rta_star(start_state)
+        path, nodes = rta_star(start_state, status)
     else:
-        path, nodes = a_star(start_state)
+        path, nodes = a_star(start_state, status)
 
     if path:
-        # for step in path:
-        #     print(step)
-        #     print("------")
         print(f"Solution found in {len(path) - 1} steps")
         print(f"Nodes expanded: {nodes}")
     else:
@@ -259,7 +273,7 @@ if __name__ == "__main__":
 
     All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
-    algorithms = ["A*"]
+    algorithms = ["A*", "RTA*"]
     heuristics = [
         "hstar",
         "manhattan_distance",
@@ -267,21 +281,24 @@ if __name__ == "__main__":
         "misplaced_tiles",
         "Gaschnig_relaxed_adjancey"
     ]
+    statuses = ["Basic", "Optimistic", "Pessimistic"]
     for heuristic in heuristics:
         for algorithm in algorithms:
-            print(f"Algorithm: {algorithm} | Heuristic: {heuristic}")
-            for puzzle in All_puzzles:
-                print(f"Puzzle: {puzzle}")
-                try:
-                    start_state = PuzzleState(
-                        puzzle, distances, heuristic=heuristic)
-                    solution(start_state, algorithm)
+            for status in statuses:
+                print(f"Algorithm: {algorithm} | Heuristic: {heuristic} | Status: {status}")
+                for puzzle in All_puzzles:
+                    print(f"Puzzle: {puzzle}")
+                    try:
+                        start_state = PuzzleState(
+                            puzzle, distances, heuristic=heuristic)
+                        solution(start_state, algorithm, status)
+                        
 
-                except ValueError as e:
-                    print(e)
-                    # with open("error_log.txt", "a") as f:
-                    #     f.write(f"Error: {e}\n")
+                    except ValueError as e:
+                        print(e)
+                        # with open("error_log.txt", "a") as f:
+                        #     f.write(f"Error: {e}\n")
 
-                    continue
-                print()
-            print("====================================")
+                        continue
+                    print()
+                print("====================================")
