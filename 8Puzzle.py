@@ -166,13 +166,13 @@ def a_star(start_state, status):
     closed_set = set()
     if status == "Basic":
         heapq.heappush(open_list, (start_state.g_cost +
-                   start_state.calculate_heuristic(), start_state))
+                                   start_state.calculate_heuristic(), start_state))
     elif status == "Optimistic":
         heapq.heappush(open_list, (start_state.g_cost +
-                   start_state.optimistic_heuristic(), start_state))
+                                   start_state.optimistic_heuristic(), start_state))
     elif status == "Pessimistic":
         heapq.heappush(open_list, (start_state.g_cost +
-                   start_state.pessimistic_heuristic(), start_state))
+                                   start_state.pessimistic_heuristic(), start_state))
 
     while open_list:
         _, current = heapq.heappop(open_list)
@@ -227,7 +227,7 @@ def rta_star(start_state, status, max_iterations=100):
         # Move to the best neighbor
         current_state = best_neighbor
 
-    return None, node_count # No solution found within the iteration limit
+    return None, node_count  # No solution found within the iteration limit
 
 
 def reconstruct_path(state, node_count):
@@ -240,25 +240,34 @@ def reconstruct_path(state, node_count):
 
 def solution(start_state, algorithm, status):
     start_time = time.time()
-    print("Solution Path:")
+    # print("Solution Path:")
+
     if algorithm == "rta*":
         path, nodes = rta_star(start_state, status)
     else:
         path, nodes = a_star(start_state, status)
 
-    if path:
-        print(f"Solution found in {len(path) - 1} steps")
-        print(f"Nodes expanded: {nodes}")
-    else:
-        print("No solution found.")
-        print(f"Nodes expanded: {nodes}")
+    # if path:
+    #     print(f"Solution found in {len(path) - 1} steps")
+    #     print(f"Nodes expanded: {nodes}")
+    # else:
+    #     print("No solution found.")
+    #     print(f"Nodes expanded: {nodes}")
 
     elapsed_time = time.time() - start_time
-    print(f"Time: {elapsed_time:.18f} seconds")
+    # print(f"Time: {elapsed_time:.18f} seconds")
+
+    # save all to csv
+    with open("results.csv", "a") as f:
+        # add header if file is empty
+        if os.stat("results.csv").st_size == 0:
+            f.write("Algorithm,Heuristic,Status,NodesExpanded,Time, puzzle\n")
+        f.write(
+            f"{algorithm},{start_state.heuristic},{status},{nodes},{elapsed_time},{start_state.board}\n")
 
 
 if __name__ == "__main__":
-    # All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
+    All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
 
     if not os.path.exists("distances.json"):
         distances = bfs_shortest_distances(tuple(GOAL_STATE))
@@ -266,10 +275,10 @@ if __name__ == "__main__":
     else:
         distances = load_distances()
 
-    All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8],
-                   [0, 2, 1, 5, 4, 3, 6, 7, 8],
-                   [4, 3, 6, 8, 0, 7, 5, 2, 1],
-                   [2, 7, 0, 5, 4, 3, 8, 1, 6]]
+    # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8],
+    #                [0, 2, 1, 5, 4, 3, 6, 7, 8],
+    #                [4, 3, 6, 8, 0, 7, 5, 2, 1],
+    #                [2, 7, 0, 5, 4, 3, 8, 1, 6]]
 
     All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
@@ -281,24 +290,29 @@ if __name__ == "__main__":
         "misplaced_tiles",
         "Gaschnig_relaxed_adjancey"
     ]
+    i = 0
     statuses = ["Basic", "Optimistic", "Pessimistic"]
     for heuristic in heuristics:
         for algorithm in algorithms:
             for status in statuses:
-                print(f"Algorithm: {algorithm} | Heuristic: {heuristic} | Status: {status}")
+                # print(
+                #     f"Algorithm: {algorithm} | Heuristic: {heuristic} | Status: {status}")
                 for puzzle in All_puzzles:
-                    print(f"Puzzle: {puzzle}")
+                    i += 1
+                    if i % 1000 == 0:
+                        print(f"i: {i}")
+
+                    # print(f"Puzzle: {puzzle}")
                     try:
                         start_state = PuzzleState(
                             puzzle, distances, heuristic=heuristic)
                         solution(start_state, algorithm, status)
-                        
-
+                        start_state.board
                     except ValueError as e:
                         print(e)
                         # with open("error_log.txt", "a") as f:
                         #     f.write(f"Error: {e}\n")
 
                         continue
-                    print()
-                print("====================================")
+                #     print()
+                # print("====================================")
