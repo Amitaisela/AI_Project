@@ -20,3 +20,7 @@ Huristic explanations:
     misplaced_tiles - number of the misplaced tiles, basically the tiles that are not in their goal positions are counted.
     Gaschnig_relaxed_adjancey - the number of tiles that needs to be moved to reach the goal state if it were possible to swap any tile with the empty tile.
 
+
+What is a correct decision?
+    a correct decision is a decision of A* or RTA* to follow the H* path from a certain position.
+    

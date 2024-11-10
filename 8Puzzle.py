@@ -162,7 +162,8 @@ class PuzzleState:
 
 def a_star(start_state, status):
     open_list = []
-    node_count = 0
+    node_count = 0  # also, this is the number of decisions made in total
+
     closed_set = set()
     if status == "Basic":
         heapq.heappush(open_list, (start_state.g_cost +
@@ -183,30 +184,35 @@ def a_star(start_state, status):
         closed_set.add(tuple(current.board))
 
         for neighbor in current.get_neighbors():
-            node_count += 1
             if tuple(neighbor.board) in closed_set:
+                # Skip this neighbor if it has already been visited
                 continue
+
+            node_count += 1
+
             if status == "Basic":
                 f_cost = neighbor.g_cost + neighbor.calculate_heuristic()
             elif status == "Optimistic":
                 f_cost = neighbor.g_cost + neighbor.optimistic_heuristic()
             elif status == "Pessimistic":
                 f_cost = neighbor.g_cost + neighbor.pessimistic_heuristic()
+
             heapq.heappush(open_list, (f_cost, neighbor))
 
-    return None, node_count
+    return None, node_count  # No solution found
 
 # RTA* algorithm
 
 
 def rta_star(start_state, status, max_iterations=100):
     current_state = start_state
-    path = []
+    path = [start_state.board]
     node_count = 0
+    number_of_right_decisions = 0
 
     for _ in range(max_iterations):
         if current_state.is_goal():
-            return path, node_count
+            return path, node_count, (number_of_right_decisions + 1) / len(path)
 
         # Get all neighbors and sort by heuristic cost
         neighbors = current_state.get_neighbors()
@@ -224,18 +230,42 @@ def rta_star(start_state, status, max_iterations=100):
         # Add the best move to the path
         path.append(best_neighbor)
 
+        # check if we did the "right" decision, by comparing the hstar of the parent and the current state
+        current_hstar = current_state.hstar()
+        parent_hstar = best_neighbor.hstar()
+
+        if parent_hstar < current_hstar:
+            number_of_right_decisions += 1
+
         # Move to the best neighbor
         current_state = best_neighbor
 
-    return None, node_count  # No solution found within the iteration limit
+    # No solution found within the iteration limit
+    return None, node_count, (number_of_right_decisions + 1) / len(path)
 
 
 def reconstruct_path(state, node_count):
     path = []
+    number_of_right_decisions = 0
+
     while state:
+        current_real_distance = state.hstar()
+
         path.append(state)
         state = state.parent
-    return path[::-1], node_count
+
+        # only calculate the parent_real_distance if the parent is not None
+        if state:
+            parent_real_distance = state.hstar()
+
+        # if the parent hstar is greater than the current hstar, then it is a right decision
+        if parent_real_distance > current_real_distance:
+            number_of_right_decisions += 1
+
+    percentage_of_right_decision = (1 + number_of_right_decisions) / len(path)
+
+    real_path = path[::-1]
+    return real_path, node_count, percentage_of_right_decision
 
 
 def solution(start_state, algorithm, status):
@@ -243,9 +273,10 @@ def solution(start_state, algorithm, status):
     # print("Solution Path:")
 
     if algorithm == "rta*":
-        path, nodes = rta_star(start_state, status)
+        path, nodes, percentage_of_right_decision = rta_star(
+            start_state, status)
     else:
-        path, nodes = a_star(start_state, status)
+        path, nodes, percentage_of_right_decision = a_star(start_state, status)
 
     # if path:
     #     print(f"Solution found in {len(path) - 1} steps")
@@ -258,16 +289,18 @@ def solution(start_state, algorithm, status):
     # print(f"Time: {elapsed_time:.18f} seconds")
 
     # save all to csv
+
     with open("results.csv", "a") as f:
         # add header if file is empty
         if os.stat("results.csv").st_size == 0:
-            f.write("Algorithm,Heuristic,Status,NodesExpanded,Time, puzzle\n")
+            f.write(
+                "Algorithm,Heuristic,Status,NodesExpanded,rightDecisions, Solutionlength, Time, puzzle\n")
         f.write(
-            f"{algorithm},{start_state.heuristic},{status},{nodes},{elapsed_time},{start_state.board}\n")
+            f"{algorithm},{start_state.heuristic},{status},{nodes},{percentage_of_right_decision},{len(path)} ,{elapsed_time},{start_state.board}\n")
 
 
 if __name__ == "__main__":
-    All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
+    # All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
 
     if not os.path.exists("distances.json"):
         distances = bfs_shortest_distances(tuple(GOAL_STATE))
@@ -280,15 +313,15 @@ if __name__ == "__main__":
     #                [4, 3, 6, 8, 0, 7, 5, 2, 1],
     #                [2, 7, 0, 5, 4, 3, 8, 1, 6]]
 
-    # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
+    All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
-    algorithms = ["A*", "RTA*"]
+    algorithms = ["A*", "rta*"]
     heuristics = [
         "hstar",
-        "manhattan_distance",
-        "linear_conflict",
-        "misplaced_tiles",
-        "Gaschnig_relaxed_adjancey"
+        # "manhattan_distance",
+        # "linear_conflict",
+        # "misplaced_tiles",
+        # "Gaschnig_relaxed_adjancey"
     ]
     i = 0
     statuses = ["Basic", "Optimistic", "Pessimistic"]
