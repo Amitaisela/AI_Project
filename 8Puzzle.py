@@ -204,7 +204,7 @@ def a_star(start_state, status):
 # RTA* algorithm
 
 
-def rta_star(start_state, status, max_iterations=100):
+def rta_star(start_state, status, max_iterations=1000):
     current_state = start_state
     path = [start_state.board]
     node_count = 0
@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
     # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
-    algorithms = ["A*", "rta*"]
+    algorithms = ["A*"]
     heuristics = [
         "hstar",
         "manhattan_distance",
@@ -326,15 +326,15 @@ if __name__ == "__main__":
     i = 0
     statuses = ["Basic", "Optimistic", "Pessimistic"]
     start = 0
-    end = float("inf")  # Max is 5,443,200
+    end = 2721600  # Max is 5,443,200
 
     # Raph is:
-    #   0 - 1360800
-    #   1360801 - 2721600
+    #   0 - 680400
+    #   680401 - 1360800
 
     # Amitai is:
-    #  2721601 - 4082400
-    #  4082401 - 5443200
+    #  1360801 - 2041200
+    #  2041201 - 2721600
 
     for heuristic in heuristics:
         for algorithm in algorithms:
@@ -363,4 +363,3 @@ if __name__ == "__main__":
                         continue
                 #     print()
                 # print("====================================")
-    print(i)
