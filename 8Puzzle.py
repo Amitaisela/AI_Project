@@ -300,7 +300,7 @@ def solution(start_state, algorithm, status):
 
 
 if __name__ == "__main__":
-    # All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
+    All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
 
     if not os.path.exists("distances.json"):
         distances = bfs_shortest_distances(tuple(GOAL_STATE))
@@ -313,20 +313,29 @@ if __name__ == "__main__":
     #                [4, 3, 6, 8, 0, 7, 5, 2, 1],
     #                [2, 7, 0, 5, 4, 3, 8, 1, 6]]
 
-    All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
+    # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
     algorithms = ["A*", "rta*"]
     heuristics = [
         "hstar",
-        # "manhattan_distance",
-        # "linear_conflict",
-        # "misplaced_tiles",
-        # "Gaschnig_relaxed_adjancey"
+        "manhattan_distance",
+        "linear_conflict",
+        "misplaced_tiles",
+        "Gaschnig_relaxed_adjancey"
     ]
     i = 0
     statuses = ["Basic", "Optimistic", "Pessimistic"]
     start = 0
-    end = float("inf")
+    end = float("inf")  # Max is 5,443,200
+
+    # Raph is:
+    #   0 - 1360800
+    #   1360801 - 2721600
+
+    # Amitai is:
+    #  2721601 - 4082400
+    #  4082401 - 5443200
+
     for heuristic in heuristics:
         for algorithm in algorithms:
             for status in statuses:
@@ -354,3 +363,4 @@ if __name__ == "__main__":
                         continue
                 #     print()
                 # print("====================================")
+    print(i)
