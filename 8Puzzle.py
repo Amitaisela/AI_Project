@@ -247,7 +247,7 @@ def rta_star(start_state, status, max_iterations=1000):
 def reconstruct_path(state, node_count):
     path = []
     number_of_right_decisions = 0
-
+    parent_real_distance = 0
     while state:
         current_real_distance = state.hstar()
 
@@ -325,7 +325,7 @@ if __name__ == "__main__":
     ]
     i = 0
     statuses = ["Basic", "Optimistic", "Pessimistic"]
-    start = 0
+    start = 2041201
     end = 2721600  # Max is 5,443,200
 
     # Raph is:
