@@ -19,6 +19,8 @@ class PuzzleState:
         self.distances = distances
         self.sigma = sigma
         self.c = c
+        self.h = -1
+        self.f = -1
 
     def __repr__(self):
         return "\n".join([
@@ -140,6 +142,11 @@ class PuzzleState:
         return (1/self.c)*(heuristic_value + noise)
 
     def calculate_heuristic(self):
+        # When self.h > -1, that means that the RTA* algorithm has already calculated the heuristic value
+        # As the huristic value of the second best neighbor, as shown in the RTA* algorithm (  )
+        if self.h > -1:
+            return self.h
+
         if self.heuristic == "hstar":
             return self.hstar()
         elif self.heuristic == "manhattan_distance":
@@ -160,9 +167,9 @@ class PuzzleState:
 # A* algorithm
 
 
-def a_star(start_state, status):
+def a_star(start_state, status, cutoff):
     open_list = []
-    node_count = 0  # also, this is the number of decisions made in total
+    node_count = 0
 
     closed_set = set()
     if status == "Basic":
@@ -185,12 +192,14 @@ def a_star(start_state, status):
 
         for neighbor in current.get_neighbors():
             if tuple(neighbor.board) in closed_set:
-                # Skip this neighbor if it has already been visited
                 continue
 
             node_count += 1
+            if current.g_cost + 1 < neighbor.g_cost:
+                neighbor.g_cost = current.g_cost + 1
+                neighbor.parent = current
 
-            if status == "Basic":
+            if status == "Basic" or node_count > cutoff:
                 f_cost = neighbor.g_cost + neighbor.calculate_heuristic()
             elif status == "Optimistic":
                 f_cost = neighbor.g_cost + neighbor.optimistic_heuristic()
@@ -199,49 +208,70 @@ def a_star(start_state, status):
 
             heapq.heappush(open_list, (f_cost, neighbor))
 
-    return None, node_count  # No solution found
+    return None, node_count
 
 # RTA* algorithm
 
 
-def rta_star(start_state, status, max_iterations=1000):
+def rta_star(start_state, status, cutoff):
     current_state = start_state
     path = [start_state.board]
     node_count = 0
-    number_of_right_decisions = 0
 
-    for _ in range(max_iterations):
-        if current_state.is_goal():
-            return path, node_count, (number_of_right_decisions + 1) / len(path)
+    while current_state.is_goal() == False:
 
-        # Get all neighbors and sort by heuristic cost
         neighbors = current_state.get_neighbors()
+
+        nearest_neighbor = neighbors[0]
+        second_nearest_neighbor = neighbors[0]
+
+        for neighbor in neighbors:
+            node_count += 1
+            if status == "Basic":
+                if neighbor.calculate_heuristic() < nearest_neighbor.calculate_heuristic():
+                    second_nearest_neighbor = nearest_neighbor
+                    nearest_neighbor = neighbor
+            elif status == "Optimistic":
+                if neighbor.optimistic_heuristic() < nearest_neighbor.optimistic_heuristic():
+                    second_nearest_neighbor = nearest_neighbor
+                    nearest_neighbor = neighbor
+            elif status == "Pessimistic":
+                if neighbor.pessimistic_heuristic() < nearest_neighbor.pessimistic_heuristic():
+                    second_nearest_neighbor = nearest_neighbor
+                    nearest_neighbor = neighbor
+
+        try:
+            # remove additional nodes i.e backtracking
+            cell_index = path.index(nearest_neighbor.board)
+            path = path[:cell_index]
+        except ValueError:
+            pass
+
         if status == "Basic":
-            neighbors.sort(key=lambda s: s.calculate_heuristic())
+            current_state.h = second_nearest_neighbor.calculate_heuristic()
         elif status == "Optimistic":
-            neighbors.sort(key=lambda s: s.optimistic_heuristic())
+            current_state.h = second_nearest_neighbor.optimistic_heuristic()
         elif status == "Pessimistic":
-            neighbors.sort(key=lambda s: s.pessimistic_heuristic())
+            current_state.h = second_nearest_neighbor.pessimistic_heuristic()
 
-        node_count += len(neighbors)
-        # Select the best neighbor
-        best_neighbor = neighbors[0]
+        current_state = nearest_neighbor
+        path.append(current_state.board)
 
-        # Add the best move to the path
-        path.append(best_neighbor)
+    number_of_right_decisions = 0
+    parent_real_distance = 0
 
-        # check if we did the "right" decision, by comparing the hstar of the parent and the current state
-        current_hstar = current_state.hstar()
-        parent_hstar = best_neighbor.hstar()
+    while current_state:
+        current_real_distance = current_state.hstar()
 
-        if parent_hstar < current_hstar:
+        if current_state.parent:
+            parent_real_distance = current_state.parent.hstar()
+
+        if parent_real_distance > current_real_distance:
             number_of_right_decisions += 1
 
-        # Move to the best neighbor
-        current_state = best_neighbor
+        current_state = current_state.parent
 
-    # No solution found within the iteration limit
-    return None, node_count, (number_of_right_decisions + 1) / len(path)
+    return path, node_count, (number_of_right_decisions + 1) / len(path)
 
 
 def reconstruct_path(state, node_count):
@@ -268,30 +298,19 @@ def reconstruct_path(state, node_count):
     return real_path, node_count, percentage_of_right_decision
 
 
-def solution(start_state, algorithm, status):
+def solution(start_state, algorithm, status, cutoff):
     start_time = time.time()
-    # print("Solution Path:")
 
     if algorithm == "rta*":
         path, nodes, percentage_of_right_decision = rta_star(
-            start_state, status)
+            start_state, status, cutoff)
     else:
-        path, nodes, percentage_of_right_decision = a_star(start_state, status)
-
-    # if path:
-    #     print(f"Solution found in {len(path) - 1} steps")
-    #     print(f"Nodes expanded: {nodes}")
-    # else:
-    #     print("No solution found.")
-    #     print(f"Nodes expanded: {nodes}")
+        path, nodes, percentage_of_right_decision = a_star(
+            start_state, status, cutoff)
 
     elapsed_time = time.time() - start_time
-    # print(f"Time: {elapsed_time:.18f} seconds")
-
-    # save all to csv
 
     with open("results.csv", "a") as f:
-        # add header if file is empty
         if os.stat("results.csv").st_size == 0:
             f.write(
                 "Algorithm,Heuristic,Status,NodesExpanded,rightDecisions, Solutionlength, Time, puzzle\n")
@@ -301,19 +320,13 @@ def solution(start_state, algorithm, status):
 
 if __name__ == "__main__":
     All_puzzles = generatePuzzles.generate_solvable_8_puzzles()
+    # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]] # Working example
 
     if not os.path.exists("distances.json"):
         distances = bfs_shortest_distances(tuple(GOAL_STATE))
         save_distances(distances)
     else:
         distances = load_distances()
-
-    # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8],
-    #                [0, 2, 1, 5, 4, 3, 6, 7, 8],
-    #                [4, 3, 6, 8, 0, 7, 5, 2, 1],
-    #                [2, 7, 0, 5, 4, 3, 8, 1, 6]]
-
-    # All_puzzles = [[2, 0, 1, 7, 4, 5, 6, 3, 8]]
 
     algorithms = ["A*"]
     heuristics = [
@@ -325,22 +338,15 @@ if __name__ == "__main__":
     ]
     i = 0
     statuses = ["Basic", "Optimistic", "Pessimistic"]
-    start = 2041201
-    end = 2721600  # Max is 5,443,200
+    start = 9
+    end = 10  # Max is 5,443,200
 
-    # Raph is:
-    #   0 - 680400
-    #   680401 - 1360800
-
-    # Amitai is:
-    #  1360801 - 2041200
-    #  2041201 - 2721600
+    # this is the cutoff for the optimistic \ pessimistic heuristic. When we reached this number of nodes expanded, we switch to the basic heuristic, which we know will solve the puzzle.
+    cutoff = 90720
 
     for heuristic in heuristics:
         for algorithm in algorithms:
             for status in statuses:
-                # print(
-                #     f"Algorithm: {algorithm} | Heuristic: {heuristic} | Status: {status}")
                 for puzzle in All_puzzles:
                     if i < start or i > end:
                         i += 1
@@ -348,18 +354,11 @@ if __name__ == "__main__":
                     i += 1
                     if i % 1000 == 0:
                         print(f"i: {i}")
-
-                    # print(f"Puzzle: {puzzle}")
                     try:
                         start_state = PuzzleState(
                             puzzle, distances, heuristic=heuristic)
-                        solution(start_state, algorithm, status)
+                        solution(start_state, algorithm, status, cutoff)
                         start_state.board
                     except ValueError as e:
                         print(e)
-                        # with open("error_log.txt", "a") as f:
-                        #     f.write(f"Error: {e}\n")
-
                         continue
-                #     print()
-                # print("====================================")
